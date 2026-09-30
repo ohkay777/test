@@ -148,6 +148,51 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:0 0 40px}
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
 #pickSec.flash::before{animation:orbit 1.4s cubic-bezier(.45,0,.25,1) forwards}
 @keyframes orbit{0%{--a:0deg;opacity:0}10%{opacity:1}85%{opacity:1}100%{--a:360deg;opacity:0}}
+
+/* ---- stability & mobile ---- */
+.app>*,.main>*,.cols>*,.headline>*{min-width:0}
+.hero p,.hint,h1{word-break:keep-all}
+.stage{flex-wrap:nowrap;min-height:56px}
+.hero-cta .pill{min-width:180px}
+.kv dd,.time b,.big,.ranks td,.ranks th,.save .line b{white-space:nowrap;min-width:0}
+.save .line{gap:12px}.save .line b{overflow:hidden;text-overflow:ellipsis}
+.time{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.banner{display:block;visibility:hidden;min-height:48px}
+.banner.show{visibility:visible}
+.recent{min-height:282px}
+.firsts{min-height:220px}
+.ranks .cnd2,.ranks .sh{display:none}
+.ranks{table-layout:fixed}.ranks th:nth-child(1){width:14%}.ranks th:nth-child(2){width:17%}.ranks th:nth-child(3){width:23%}.ranks th:nth-child(4){width:16%}.ranks th:nth-child(5){width:30%}
+.ranks td{overflow:hidden;text-overflow:ellipsis}
+.heat span{display:block;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:620px){
+  .wrap{padding:0 16px}
+  .hero{padding:36px 0 24px}
+  h1{font-size:40px}
+  .hero p{font-size:15px}
+  .hero-cta .pill{min-width:0;flex:1;padding:13px 12px;font-size:14px}
+  .stage{gap:6px}
+  .ball{width:38px;height:38px;font-size:15px}
+  .plus{font-size:16px}
+  .card,.panel{padding:18px;border-radius:18px}
+  .big{font-size:30px}
+  .time b{font-size:17px}
+  .ranks .cnd{display:none}
+  .ranks .cnd2{display:block}
+  .ranks th:nth-child(1){width:28%}.ranks th:nth-child(3){width:30%}.ranks th:nth-child(4){width:18%}.ranks th:nth-child(5){width:24%}
+  .ranks .sh{display:inline}
+  .ranks .fl{display:none}
+  .time{grid-template-columns:1fr;gap:8px}
+  .time div{display:flex;justify-content:space-between;align-items:baseline;flex-direction:row-reverse}
+  .time b{font-size:16px}
+  .ranks th,.ranks td{padding-left:4px;padding-right:4px}
+  .ranks td.c{font-size:14px}
+  .cmp{font-size:11.5px}
+  .heat{gap:4px}
+  .heat b{font-size:12px}
+  .heat span{font-size:9px}
+  .recent .d{width:52px}
+}
 @media (prefers-reduced-motion: reduce){.rot{transition:none}#pickSec.flash::before{animation:none;opacity:1;background:var(--g3)}}
 </style>
 </head>
@@ -235,7 +280,7 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:0 0 40px}
         <p class="hint">실제로 나온 비율을 공식 확률과 비교해요.</p>
         <div class="scroll">
           <table class="ranks">
-            <thead><tr><th>등수</th><th>조건</th><th>실제 / 공식 확률</th><th style="text-align:right">당첨</th><th style="text-align:right">받은 당첨금</th></tr></thead>
+            <thead><tr><th>등수</th><th class="cnd">조건</th><th>실제 / 공식 확률</th><th style="text-align:right">당첨</th><th style="text-align:right">받은 당첨금</th></tr></thead>
             <tbody id="rankBody"></tbody>
           </table>
         </div>
@@ -303,7 +348,10 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:0 0 40px}
   function comma(n){return Math.round(n).toLocaleString('ko-KR');}
   function won(n){
     var s=n<0?'-':'',a=Math.abs(Math.round(n));
-    if(a>=1e8){var e=Math.floor(a/1e8),m=Math.floor((a%1e8)/1e4);return s+comma(e)+'억'+(m?' '+comma(m)+'만':'')+'원';}
+    if(!isFinite(a)||a>=1e20){var e=Math.floor(Math.log10(Math.abs(n)));return isFinite(e)?s+'약 10^'+e+'원':s+'측정 불가';}
+    if(a>=1e16){return s+comma(Math.floor(a/1e16))+'경'+(Math.floor((a%1e16)/1e12)?' '+comma(Math.floor((a%1e16)/1e12))+'조':'')+'원';}
+    if(a>=1e12){return s+comma(Math.floor(a/1e12))+'조'+(Math.floor((a%1e12)/1e8)?' '+comma(Math.floor((a%1e12)/1e8))+'억':'')+'원';}
+    if(a>=1e8){var e2=Math.floor(a/1e8),m=Math.floor((a%1e8)/1e4);return s+comma(e2)+'억'+(m?' '+comma(m)+'만':'')+'원';}
     if(a>=1e4){return s+comma(Math.floor(a/1e4))+'만'+(a%1e4?' '+comma(a%1e4):'')+'원';}
     return s+comma(a)+'원';
   }
@@ -312,6 +360,7 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:0 0 40px}
     if(!y)return w+'주';
     return comma(y)+'년'+(w?' '+w+'주':'');
   }
+  function short(n){return n>=1e12?(n>=1e20?'10^'+Math.floor(Math.log10(n)):(n/1e12).toFixed(1)+'조'):n>=1e8?(n/1e8).toFixed(1)+'억':n>=1e4?(n/1e4).toFixed(n>=1e5?0:1)+'만':comma(n);}
   function ballHTML(n,sm){return '<span class="ball'+(sm?' sm':'')+'" style="background:'+ballColor(n)+'">'+n+'</span>';}
 
   // ---------- config ----------
@@ -335,7 +384,7 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:0 0 40px}
   // ---------- engine ----------
   var pool=[];for(var i=1;i<=45;i++)pool.push(i);
   var mark=new Uint8Array(46),wn=new Array(7),tk=new Array(6),WR=0.03/52;
-  function pick(k,out){for(var i=0;i<k;i++){var j=i+((Math.random()*(45-i))|0),t=pool[i];pool[i]=pool[j];pool[j]=t;out[i]=t;}}
+  function pick(k,out){for(var i=0;i<k;i++){var j=i+((Math.random()*(45-i))|0),t=pool[i];pool[i]=pool[j];pool[j]=t;out[i]=pool[i];}}
   function drawOnce(){
     pick(7,wn);mark.fill(0);
     for(var i=0;i<6;i++)mark[wn[i]]=1;
@@ -447,9 +496,9 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:0 0 40px}
     var rows='';
     RANKS.forEach(function(k){
       var c=S.rank[k.r],act=c?'1 / '+comma(S.games/c):'-';
-      rows+='<tr><td class="r">'+k.r+'등<span class="sub">'+won(PRIZE[k.r])+'</span></td><td>'+k.cond+'</td><td class="cmp"><b>'+act+'</b><br>1 / '+comma(k.odds)+'</td><td class="c">'+comma(c)+'</td><td class="c t">'+won(c*PRIZE[k.r])+'</td></tr>';
+      rows+='<tr><td class="r">'+k.r+'등<span class="sub">'+won(PRIZE[k.r])+'</span><span class="sub cnd2">'+k.cond+'</span></td><td class="cnd">'+k.cond+'</td><td class="cmp"><b>'+act+'</b><br>1 / '+comma(k.odds)+'</td><td class="c">'+comma(c)+'</td><td class="c t"><span class="fl">'+won(c*PRIZE[k.r])+'</span><span class="sh">'+short(c*PRIZE[k.r])+'원</span></td></tr>';
     });
-    rows+='<tr><td class="r">낙첨</td><td>2개 이하</td><td class="cmp">'+(S.games?(S.rank[0]/S.games*100).toFixed(2)+'%':'-')+'</td><td class="c">'+comma(S.rank[0])+'</td><td class="c t" style="color:var(--faint)">0원</td></tr>';
+    rows+='<tr><td class="r">낙첨<span class="sub cnd2">2개 이하</span></td><td class="cnd">2개 이하</td><td class="cmp">'+(S.games?(S.rank[0]/S.games*100).toFixed(2)+'%':'-')+'</td><td class="c">'+comma(S.rank[0])+'</td><td class="c t" style="color:var(--faint)">0원</td></tr>';
     $('rankBody').innerHTML=rows;
 
     // savings
@@ -467,7 +516,7 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:0 0 40px}
     var fmax=0,fmin=Infinity;for(var n=1;n<=45;n++){fmax=Math.max(fmax,S.freq[n]);fmin=Math.min(fmin,S.freq[n]);}
     var h='';for(n=1;n<=45;n++){
       var p=fmax>fmin?(S.freq[n]-fmin)/(fmax-fmin):0;
-      h+='<div style="background:color-mix(in srgb,var(--g3) '+Math.round(p*70)+'%,var(--soft))"><b>'+n+'</b><span>'+comma(S.freq[n])+'</span></div>';
+      h+='<div style="background:color-mix(in srgb,var(--g3) '+Math.round(p*70)+'%,var(--soft))"><b>'+n+'</b><span>'+short(S.freq[n])+'</span></div>';
     }
     $('heat').innerHTML=h;
 
